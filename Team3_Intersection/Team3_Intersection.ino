@@ -7,9 +7,8 @@
 #define YELLOW_LR_PIN  5
 #define GREEN_LR_PIN   4
 //loop에서 쓰일 기호상수
-#define LED_RED_DURATION            4000
-#define LED_GREEN_DURATION          3000
-#define LED_YELLOW_BLINK_DURATION   10000
+#define DRIVABLE_DURATION           3000
+#define LED_YELLOW_BLINK_DURATION   5000
 #define BLINK_TIME                  10
 
 //기능 : duration 동안 pin을 킵니다
@@ -31,9 +30,23 @@ void setup()
 
 void loop()
 {
+  //좌우 주행 가능
+  digitalWrite(RED_UD_PIN, HIGH);
+  LEDTurnOnInTime(GREEN_LR_PIN, DRIVABLE_DURATION);
+  LEDBlink(YELLOW_LR_PIN, LED_YELLOW_BLINK_DURATION, BLINK_TIME);
+  digitalWrite(RED_UD_PIN, LOW);
+  //상하 주행 가능
+  digitalWrite(GREEN_UD_PIN, HIGH);
+  digitalWrite(RED_LR_PIN, HIGH);
+  delay(DRIVABLE_DURATION);
+  digitalWrite(GREEN_UD_PIN, LOW);
+  LEDBlink(YELLOW_UD_PIN, LED_YELLOW_BLINK_DURATION, BLINK_TIME);
+  digitalWrite(RED_LR_PIN, LOW);
+  /*
   LEDTurnOnInTime(RED_UD_PIN, LED_RED_DURATION);
   LEDBlink(YELLOW_UD_PIN, LED_YELLOW_BLINK_DURATION, BLINK_TIME); 
   LEDTurnOnInTime(GREEN_UD_PIN, LED_GREEN_DURATION);
+  */
 }
 
 void LEDTurnOnInTime(const int pin, const int duration)
