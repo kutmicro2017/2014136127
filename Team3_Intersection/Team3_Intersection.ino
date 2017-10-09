@@ -7,7 +7,8 @@
 #define YELLOW_LR_PIN  37
 #define GREEN_LR_PIN   39
 //입력 핀 세팅
-#define WALKER_BUTTON 20
+#define WALKER_UD_BUTTON 20
+#define WALKER_LR_BUTTON 21
 //기타 기호상수
 #define DRIVABLE_DURATION           20000   //주행 가능 시간, 녹색등 유지시간(20sec)
 #define LED_YELLOW_BLINK_DURATION   5000    //경고등 점멸 시간(5sec)
@@ -39,7 +40,8 @@ void setup()
   pinMode(YELLOW_LR_PIN, OUTPUT);
   pinMode(GREEN_LR_PIN, OUTPUT);
   //입력 핀 모드 설정
-  pinMode(WALKER_BUTTON, INPUT_PULLUP);
+  pinMode(WALKER_UD_BUTTON, INPUT_PULLUP);
+  pinMode(WALKER_LR_BUTTON, INPUT_PULLUP);
 }
 
 void loop()
@@ -72,11 +74,11 @@ void BlinkLED(const int pin, const int duration, const int blinkTime)
 
 void AdjustTrafficLight()
 {
-  if (digitalRead(WALKER_BUTTON) == LOW && digitalRead(GREEN_UD_PIN) == HIGH)
+  if (digitalRead(WALKER_UD_BUTTON) == LOW && digitalRead(GREEN_UD_PIN) == HIGH)
   {
     doAdjust(RED_UD_PIN, GREEN_UD_PIN, YELLOW_UD_PIN);
   }
-  else if (digitalRead(WALKER_BUTTON) == LOW && digitalRead(GREEN_LR_PIN) == HIGH)
+  else if (digitalRead(WALKER_LR_BUTTON) == LOW && digitalRead(GREEN_LR_PIN) == HIGH)
   {
     doAdjust(RED_LR_PIN, GREEN_LR_PIN, YELLOW_LR_PIN);
   }
