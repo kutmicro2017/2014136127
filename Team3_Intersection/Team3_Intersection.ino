@@ -114,4 +114,3 @@ void Drive(const int red, const int green, const int yellow, const int otherRed)
   }
   digitalWrite(otherRed, LOW);
 }
-
