@@ -199,6 +199,8 @@ void DisplayTimer(int duration);
 void PrintAndDelay(int duration, int former, int later);
 //기능 : duration 동안 타이머를 출력하면서 폴링을 받습니다.
 void PrintAndDelayWithPolling(int duration, int former, int later);
+//기능 : duration 동안 보행 신호를 출력합니다.
+void PrintWalkSign();
 
 /*
 //기능 : duration 동안 pin을 킵니다
@@ -245,7 +247,7 @@ void loop()
      int later = t % 10;
      if (t > BLINK_TIME)
      {
-        PrintAndDelay(1000, former, later);
+        PrintAndDelayWithPolling(1000, former, later);
      }
      else
      {
@@ -417,7 +419,7 @@ void PrintAndDelayWithPolling(int duration, int former, int later)
     DisplayNumber(gNumbers[former], gNumbers[later]);
     if (digitalRead(WALKER_UD_BUTTON) == LOW && digitalRead(GREEN_UD_PIN) == HIGH)
     {
-      AdjustTrafficLightForUD(former, later);
+      AdjustTrafficLightForUD();
     }
     /*
     else if (digitalRead(WALKER_LR_BUTTON) == LOW && digitalRead(GREEN_LR_PIN) == HIGH)
@@ -453,11 +455,34 @@ void BlinkLEDForUD(int former, int later)
   PrintAndDelay(delayTime, former, later);
 }
 
-void AdjustTrafficLightForUD(int former, int later)
+void AdjustTrafficLightForUD()
 {
-  delay(TRAFFIC_LIGHT_IDLE_TIME);
-  digitalWrite(GREEN_UD_PIN, LOW);
-  BlinkLEDForUD(former, later);
+  for (int t = TRAFFIC_LIGHT_IDLE_TIME / 1000 + BLINK_TIME; t >= 0; --t)
+  {
+    if (t > BLINK_TIME)
+    {
+      PrintAndDelay(1000, t / 10, t % 10);
+    }
+    else
+    {
+      digitalWrite(GREEN_UD_PIN, LOW);
+      BlinkLEDForUD(t / 10, t % 10);
+    }
+  }
   digitalWrite(RED_UD_PIN, HIGH);
+  PrintWalkSign(DRIVABLE_DURATION + LED_YELLOW_BLINK_DURATION);
+}
+
+void PrintWalkSign(unsigned duration)
+{
+  ClearUpper();
+  unsigned timeStart;
+  unsigned timeEnd;
+  timeStart = timeEnd = millis();
+  while (timeEnd - timeStart <= duration)
+  {
+    DisplayWalkSign();
+    timeEnd = millis();
+  }
 }
 
