@@ -316,7 +316,7 @@ void PrintWalkSignWithPolling(int duration)
 
 void AdjustTrafficLightForLR()
 {
-  for (int t = TRAFFIC_LIGHT_IDLE_TIME / 1000 + BLINK_TIME; t > 0; --t)
+  for (int t = (TRAFFIC_LIGHT_IDLE_TIME + LED_YELLOW_BLINK_DURATION) / 1000; t > 0; --t)
   {
     if (t > BLINK_TIME)
     {
@@ -346,7 +346,7 @@ void BlinkLEDForUD(int former, int later)
 
 void AdjustTrafficLightForUD()
 {
-  for (int t = TRAFFIC_LIGHT_IDLE_TIME / 1000 + BLINK_TIME; t > 0; --t)
+  for (int t = (TRAFFIC_LIGHT_IDLE_TIME + LED_YELLOW_BLINK_DURATION) / 1000; t > 0; --t)
   {
     if (t > BLINK_TIME)
     {
