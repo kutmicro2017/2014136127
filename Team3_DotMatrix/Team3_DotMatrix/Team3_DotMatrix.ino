@@ -251,7 +251,7 @@ void loop()
         if (gbChange)
        {
         gbChange = false;
-        goto EXIT_UD;
+        break;
        }
      }
      else if (digitalRead(RED_UD_PIN) == LOW)
@@ -260,7 +260,6 @@ void loop()
        BlinkLEDForUD(former, later);
      }
   }
-  EXIT_UD:
   digitalWrite(RED_LR_PIN, LOW);
 
   //좌우 주행
@@ -276,7 +275,7 @@ void loop()
         if(gbChange)
        {
         gbChange = false;
-        goto EXIT_LR;
+        break;
        }
      }
      else if (digitalRead(RED_LR_PIN) == LOW)
@@ -285,7 +284,6 @@ void loop()
        BlinkLEDForLR();
      }
   }
-  EXIT_LR:
   digitalWrite(RED_UD_PIN, LOW);
 }
 
