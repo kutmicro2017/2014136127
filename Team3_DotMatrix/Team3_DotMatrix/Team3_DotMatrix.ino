@@ -20,10 +20,10 @@ int gLowerPinRow[] = { 22, 24, 26, 28, 30, 32, 34, 36 };
 int gLowerPinCol[] = { 23, 25, 27, 29, 31, 33, 35, 37 };
 
 //기타 기호상수
-#define DRIVABLE_DURATION           5000u                                                  //주행 가능 시간, 녹색등 유지시간(20sec)
-#define LED_YELLOW_BLINK_DURATION   1000u                                                   //경고등 점멸 시간(5sec)
+#define DRIVABLE_DURATION           20000u                                                  //주행 가능 시간, 녹색등 유지시간(20sec)
+#define LED_YELLOW_BLINK_DURATION   5000u                                                   //경고등 점멸 시간(5sec)
 #define BLINK_TIME                  LED_YELLOW_BLINK_DURATION / 1000                        //점멸 횟수(1초당 1회)
-#define TRAFFIC_LIGHT_IDLE_TIME     2000u                                                   //입력 받았을 시 대기 시간(3sec)
+#define TRAFFIC_LIGHT_IDLE_TIME     3000u                                                   //입력 받았을 시 대기 시간(3sec)
 #define ARRAY_LENGTH                8                                                       //배열 길이
 #define CYCLE                       (DRIVABLE_DURATION + LED_YELLOW_BLINK_DURATION) / 1000  //신호 바뀔 때까지의 걸리는 시간
 
