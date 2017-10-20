@@ -9,8 +9,8 @@
 #define GREEN_LR_PIN   45
 
 //입력 핀 세팅
-#define WALKER_UD_BUTTON 18
-#define WALKER_LR_BUTTON 19
+#define WALKER_UD_BUTTON 20
+#define WALKER_LR_BUTTON 21
 
 //상단 신호 출력용 매트릭스 핀 번호 배열
 int gUpperPinRow[] = { 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -26,6 +26,7 @@ int gLowerPinCol[] = { 23, 25, 27, 29, 31, 33, 35, 37 };
 #define TRAFFIC_LIGHT_IDLE_TIME     3000u                                                   //입력 받았을 시 대기 시간(3sec)
 #define ARRAY_LENGTH                8                                                       //배열 길이
 #define CYCLE                       (DRIVABLE_DURATION + LED_YELLOW_BLINK_DURATION) / 1000  //신호 바뀔 때까지의 걸리는 시간
+#define WALK_DURATION               CYCLE * 1000                                            //
 
 //폴링시 필요한 변수
 bool gbChange = false;
@@ -330,7 +331,7 @@ void AdjustTrafficLightForLR()
     }
   }
   digitalWrite(RED_LR_PIN, HIGH);
-  PrintWalkSign(DRIVABLE_DURATION + LED_YELLOW_BLINK_DURATION);
+  PrintWalkSign(WALK_DURATION);
   gbChange = true;
 }
 
@@ -360,7 +361,7 @@ void AdjustTrafficLightForUD()
     }
   }
   digitalWrite(RED_UD_PIN, HIGH);
-  PrintWalkSign(DRIVABLE_DURATION + LED_YELLOW_BLINK_DURATION);
+  PrintWalkSign(WALK_DURATION);
   gbChange = true;
 }
 
