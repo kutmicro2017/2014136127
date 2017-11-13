@@ -9,7 +9,8 @@
 #define GREEN_LR_PIN   45
 
 //입력 핀 세팅
-#define WALKER_UD_BUTTON 43
+#define WALKER_UD_BUTTON 20
+#define WALKER_LR_BUTTON 21
 
 //상단 신호 출력용 매트릭스 핀 번호 배열
 int gUpperPinRow[] = { 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -25,7 +26,10 @@ int gLowerPinCol[] = { 23, 25, 27, 29, 31, 33, 35, 37 };
 #define TRAFFIC_LIGHT_IDLE_TIME     3000u                                                   //입력 받았을 시 대기 시간(3sec)
 #define ARRAY_LENGTH                8                                                       //배열 길이
 #define CYCLE                       (DRIVABLE_DURATION + LED_YELLOW_BLINK_DURATION) / 1000  //신호 바뀔 때까지의 걸리는 시간
+#define WALK_DURATION               CYCLE * 1000                                            //
 
+//폴링시 필요한 변수
+bool gbChange = false;
 //DotMatrix 타이머 출력을 위한 변수
 int gNumbers[10][8][4] =
 {
@@ -170,6 +174,11 @@ int gWalkerSigns[2][8][8] =
 //좌우를 위한 함수
 //기능 : 좌우의 노란등을 한번 점멸합니다.
 void BlinkLEDForLR();
+//기능 : duration 동안 보행 신호를 출력하면서 폴링을 받습니다.
+//인자 : duration은 ms단위입니다.
+void PrintWalkSignWithPolling(int duration);
+//기능 : 신호를 바꿉니다.
+void AdjustTrafficLightForLR();
 
 //위아래를 위한 함수
 //기능 : 위아래의 노란등을 한번 점멸합니다.
@@ -180,9 +189,6 @@ void AdjustTrafficLightForUD();
 //기능 : duration 동안 타이머를 출력하면서 폴링을 받습니다.
 //인자 : duration은 ms단위이고, former는 출력할 수의 십의 자리, later는 출력할 수의 일의 자리입니다.
 void PrintStopSignWithPolling(int duration, int former, int later);
-//기능 : duration 동안 타이머를 출력합니다.
-//인자 : duration은 ms단위입니다.
-void DisplayTimer(int duration);
 
 //공통 함수
 //기능 : 상단의 DotMatrix 신호를 지웁니다.
@@ -199,8 +205,9 @@ void DisplayWalkSign();
 //기능 : duration 동안 타이머를 출력하면서 대기합니다.
 //인자 : duration은 ms 단위, former는 출력할 수의 십의 자리, later는 출력할 수의 일의 자리입니다.
 void PrintStopSign(int duration, int former, int later);
-//기능 : 보행 신호를 출력합니다.
-void PrintWalkSign();
+//기능 : duration동안 보행 신호를 출력합니다.
+//인자 : duration은 ms단위입니다.
+void PrintWalkSign(unsigned duration);
 
 void setup()
 {
@@ -227,6 +234,7 @@ void setup()
   }
   //입력 핀 모드 설정
   pinMode(WALKER_UD_BUTTON, INPUT_PULLUP);
+  pinMode(WALKER_LR_BUTTON, INPUT_PULLUP);
 }
 
 void loop()
@@ -234,13 +242,18 @@ void loop()
   //상하 주행
   digitalWrite(RED_LR_PIN, HIGH);
   digitalWrite(GREEN_UD_PIN, HIGH);
-  for (int t = CYCLE; t >= 0; --t)
+  for (int t = CYCLE; t > 0; --t)
   {
      int former = t / 10;
      int later = t % 10;
      if (t > BLINK_TIME)
      {
         PrintStopSignWithPolling(1000, former, later);
+        if (gbChange)
+       {
+        gbChange = false;
+        break;
+       }
      }
      else if (digitalRead(RED_UD_PIN) == LOW)
      {
@@ -249,17 +262,22 @@ void loop()
      }
   }
   digitalWrite(RED_LR_PIN, LOW);
-  
+
   //좌우 주행
   digitalWrite(RED_UD_PIN, HIGH);
   digitalWrite(GREEN_LR_PIN, HIGH);
-  for (int t = CYCLE; t >= 0; --t)
+  for (int t = CYCLE; t > 0; --t)
   {
      int former = t / 10;
      int later = t % 10;
      if (t > BLINK_TIME)
      {
-        PrintWalkSign(1000);
+        PrintWalkSignWithPolling(1000);
+        if(gbChange)
+       {
+        gbChange = false;
+        break;
+       }
      }
      else if (digitalRead(RED_LR_PIN) == LOW)
      {
@@ -280,6 +298,43 @@ void BlinkLEDForLR()
   PrintWalkSign(delayTime);
 }
 
+void PrintWalkSignWithPolling(int duration)
+{
+  unsigned timeStart;
+  unsigned timeEnd;
+  timeStart = timeEnd = millis();
+  while (timeEnd - timeStart <= duration)
+  {
+    DisplayWalkSign();
+    //Polling
+    if (digitalRead(WALKER_LR_BUTTON) == LOW && digitalRead(GREEN_LR_PIN) == HIGH)
+    {
+      AdjustTrafficLightForLR();
+    }
+    timeEnd = millis();
+  }
+}
+
+void AdjustTrafficLightForLR()
+{
+  for (int t = (TRAFFIC_LIGHT_IDLE_TIME + LED_YELLOW_BLINK_DURATION) / 1000; t > 0; --t)
+  {
+    if (t > BLINK_TIME)
+    {
+      //1초간 보행 신호 출력
+      PrintWalkSign(1000);
+    }
+    else
+    {
+      digitalWrite(GREEN_LR_PIN, LOW);
+      BlinkLEDForLR();
+    }
+  }
+  digitalWrite(RED_LR_PIN, HIGH);
+  PrintWalkSign(WALK_DURATION);
+  gbChange = true;
+}
+
 void BlinkLEDForUD(int former, int later)
 {
   static const int delayTime = LED_YELLOW_BLINK_DURATION / (BLINK_TIME + BLINK_TIME);
@@ -292,7 +347,7 @@ void BlinkLEDForUD(int former, int later)
 
 void AdjustTrafficLightForUD()
 {
-  for (int t = TRAFFIC_LIGHT_IDLE_TIME / 1000 + BLINK_TIME; t >= 0; --t)
+  for (int t = (TRAFFIC_LIGHT_IDLE_TIME + LED_YELLOW_BLINK_DURATION) / 1000; t > 0; --t)
   {
     if (t > BLINK_TIME)
     {
@@ -306,7 +361,8 @@ void AdjustTrafficLightForUD()
     }
   }
   digitalWrite(RED_UD_PIN, HIGH);
-  PrintWalkSign(DRIVABLE_DURATION + LED_YELLOW_BLINK_DURATION);
+  PrintWalkSign(WALK_DURATION);
+  gbChange = true;
 }
 
 void PrintStopSignWithPolling(int duration, int former, int later)
@@ -324,24 +380,6 @@ void PrintStopSignWithPolling(int duration, int former, int later)
       AdjustTrafficLightForUD();
     }
     timeEnd = millis();
-  }
-}
-
-void DisplayTimer(int duration)
-{
-  unsigned timeStart;
-  unsigned timeEnd;
-  for (int t = duration; t >= 0; --t)
-  {
-    int former = t / 10;
-    int later = t % 10;
-    timeStart = timeEnd = millis();
-    while (timeEnd - timeStart <= 1000)
-    {
-      DisplayStopSign();
-      DisplayNumber(gNumbers[former], gNumbers[later]);
-      timeEnd = millis();  
-    }
   }
 }
 
@@ -412,6 +450,7 @@ void DisplayWalkSign()
 {
   for(int r = 0; r < 8; ++r)
   {
+    ClearUpper();
     ClearLower();
     digitalWrite(gLowerPinRow[r], HIGH);
     for(int c = 0; c < 8; ++c)
