@@ -74,17 +74,19 @@ void loop()
     break;
   }
   */
+
   
   for (int i = 300; i >= 0; --i)
   {
-    EmitYC(i);
-    delay(50);
+    EmitOP(i);
+    delay(100);
   }
-  
 }
 
 void EmitRB(int temperature)
 {
+  //RED : (255, 0, 0)
+  //BLUE : (0, 0, 255)
   static const int normalTemperature = NORMAL_TEMPERATURE * 10;
   
   int red = 0;
@@ -110,11 +112,36 @@ void EmitRB(int temperature)
 }
 void EmitOP(int temperature)
 {
+  //ORANGE : (255, 50, 0)
+  //PURPLE : (150, 0, 220)
+  static const int normalTemperature = NORMAL_TEMPERATURE * 10;
   
+  int red = 0;
+  int green = 0;
+  int blue = 0;
+  if (temperature >= normalTemperature)
+  {
+    red = 255;
+    green = 255 - 1.4f * (temperature - normalTemperature);
+    blue = 255 - 1.7f * (temperature - normalTemperature);
+  }
+  else
+  {
+    red = 255 - 0.7f * (normalTemperature - temperature);
+    green = 255 - 1.7f * (normalTemperature - temperature);
+    blue = 255 - 0.23f * (normalTemperature - temperature);
+  }
+  for (int i = 0; i < gBrightness; ++i)
+  {
+    strip.setPixelColor(i, red, green, blue);
+  }
+  strip.show();
 }
 
 void EmitYC(int temperature)
 {
+  //YELLOW : (255, 255, 0)
+  //CYAN : (0, 255, 255)
   static const int normalTemperature = NORMAL_TEMPERATURE * 10;
   
   int red = 0;
