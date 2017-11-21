@@ -4,7 +4,7 @@
   #include <avr/power.h>
 #endif
 
-enum eColor { RED_TO_BLUE, ORANGE_TO_PURPLE, YELLOW_TO_BLUISHGREEN };
+enum eColor { RED_TO_BLUE, ORANGE_TO_PURPLE, YELLOW_TO_CYAN };
 
 #define NEO_PIXEL 4
 #define COLOR_BUTTON 2
@@ -21,7 +21,7 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(16, NEO_PIXEL, NEO_GRB + NEO_KHZ800)
 
 void EmitRB(int temperature);
 void EmitOP(int temperature);
-void EmitYG(int temperature);
+void EmitYC(int temperature);
 
 void ChangeColor();
 void ChangeBrightness();
@@ -74,11 +74,13 @@ void loop()
     break;
   }
   */
+  
   for (int i = 300; i >= 0; --i)
   {
-    EmitRB(i);
+    EmitYC(i);
     delay(50);
   }
+  
 }
 
 void EmitRB(int temperature)
@@ -111,9 +113,30 @@ void EmitOP(int temperature)
   
 }
 
-void EmitYG(int temperature)
+void EmitYC(int temperature)
 {
+  static const int normalTemperature = NORMAL_TEMPERATURE * 10;
   
+  int red = 0;
+  int green = 0;
+  int blue = 0;
+  if (temperature >= normalTemperature)
+  {
+    red = 255;
+    green = 255;
+    blue = 255 - 1.7f * (temperature - normalTemperature);
+  }
+  else
+  {
+    red = 255 - 1.7f * (normalTemperature - temperature);
+    green = 255;
+    blue = 255;
+  }
+  for (int i = 0; i < gBrightness; ++i)
+  {
+    strip.setPixelColor(i, red, green, blue);
+  }
+  strip.show();
 }
 void ChangeColor()
 {
