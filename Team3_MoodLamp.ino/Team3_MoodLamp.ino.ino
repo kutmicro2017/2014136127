@@ -4,6 +4,8 @@
   #include <avr/power.h>
 #endif
 
+#define _DEBUG
+
 enum eColor { RED_TO_BLUE, ORANGE_TO_PURPLE, YELLOW_TO_CYAN };
 
 #define NEO_PIXEL 4
@@ -12,21 +14,24 @@ enum eColor { RED_TO_BLUE, ORANGE_TO_PURPLE, YELLOW_TO_CYAN };
 #define TEMP_SENSOR A5
 #define BATTERY A0
 
-#define LOWEST_TEMPERATURE 0
-#define NORMAL_TEMPERATURE 15
-#define HIGHEST_TEMPERATURE 30
+const int NORMAL_TEMPERATURE = 15 * 10;
+const int THERMISTER = 4275;
+const int R0 = 100000; // 100kelvin
 
 volatile int gBrightness = 2;
 volatile int gColor = eColor::RED_TO_BLUE;
+volatile bool gbIsBrightnessChanged = false;
 Adafruit_NeoPixel gCirclePixel = Adafruit_NeoPixel(16, NEO_PIXEL, NEO_GRB + NEO_KHZ800);
-
-void EmitRB(int temperature);
-void EmitOP(int temperature);
-void EmitYC(int temperature);
-void TurnOnPixel(int red, int green, int blue);
 
 void ChangeColor();
 void ChangeBrightness();
+
+struct RGB
+{
+  int R;
+  int G;
+  int B;
+};
 
 void setup()
 {
@@ -38,125 +43,103 @@ void setup()
 #endif
   gCirclePixel.begin();
   gCirclePixel.show();
-/*터치센서
+
   pinMode(COLOR_BUTTON, INPUT_PULLUP);
   pinMode(BRIGHTNESS_BUTTON, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(COLOR_BUTTON), ChangeColor, LOW);
-  attachInterrupt(digitalPinToInterrupt(BRIGHTNESS_BUTTON), ChangeBrightness, LOW); 
-*/
+  attachInterrupt(digitalPinToInterrupt(COLOR_BUTTON), ChangeColor, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BRIGHTNESS_BUTTON), ChangeBrightness, FALLING); 
 
   Serial.begin(9600);
 }
 
 void loop()
 {
-  static const int thermistor = 4275;
-  static const int R0 = 100000; // 100kelvin
-
+  //기준 : 최고 온도 30도, 중간 온도 15도, 최저 온도 0도
+  
+  //To calculate the temperature
   int analogVal = analogRead(TEMP_SENSOR);
-  float R = 1023.f / a - 1.f;
+  float R = 1023.f / analogVal - 1.f;
   R *= R0;
-  float temperature = 1.f / (log(R / R0) / thermistor + 1 / 298.15f) - 273.15f;
-
+  float temperature = 1.f / (log(R / R0) / THERMISTER + 1 / 298.15f) - 273.15f;
+  
+#ifdef _DEBUG
   Serial.print("Temp : ");
   Serial.println(temperature);
-  
+#endif
+
+  //To set RGB
+  RGB curr = { 0 };
+  static RGB prev = { 0 };
+  prev = curr;
   switch (gColor)
   {
   case eColor::RED_TO_BLUE:
-    EmitRB(temperature * 10.f);
+    //RED : (255, 0, 0)
+    //BLUE : (0, 0, 255)
+    if (temperature >= NORMAL_TEMPERATURE)
+    {
+      curr.R = 255;
+      curr.G = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
+      curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
+    }
+    else
+    {
+      curr.R = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
+      curr.G = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
+      curr.B = 255;
+    }
     break;
   case eColor::ORANGE_TO_PURPLE:
-    EmitOP(temperature * 10.f);
+    //ORANGE : (255, 50, 0)
+    //PURPLE : (150, 0, 220)
+    if (temperature >= NORMAL_TEMPERATURE)
+    {
+      curr.R = 255;
+      curr.G = 255 - 1.4f * (temperature - NORMAL_TEMPERATURE);
+      curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
+    }
+    else
+    {
+      curr.R = 255 - 0.7f * (NORMAL_TEMPERATURE - temperature);
+      curr.G = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
+      curr.B = 255 - 0.23f * (NORMAL_TEMPERATURE - temperature);
+    }
     break;
   default:
-    EmitYC(temperature * 10.f);
+    //YELLOW : (255, 255, 0)
+    //CYAN : (0, 255, 255)
+    if (temperature >= NORMAL_TEMPERATURE)
+    {
+      curr.R = 255;
+      curr.G = 255;
+      curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
+    }
+    else
+    {
+      curr.R = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
+      curr.G = 255;
+      curr.B = 255;
+    }
     break;
   }
-}
 
-void EmitRB(int temperature)
-{
-  //RED : (255, 0, 0)
-  //BLUE : (0, 0, 255)
-  static const int normalTemperature = NORMAL_TEMPERATURE * 10;
+  //To Compare curr with prev
+  bool bColorChange = (curr.R != prev.R) || (curr.G != prev.G) || (curr.B != prev.B);
   
-  int red = 0;
-  int green = 0;
-  int blue = 0;
-  if (temperature >= normalTemperature)
+  //To Emit Light
+  if (gbIsBrightnessChanged)
   {
-    red = 255;
-    green = 255 - 1.7f * (temperature - normalTemperature);
-    blue = 255 - 1.7f * (temperature - normalTemperature);
+    gCirclePixel.clear();
+    gbIsBrightnessChanged = false;
   }
-  else
+  if (bColorChange)
   {
-    red = 255 - 1.7f * (normalTemperature - temperature);
-    green = 255 - 1.7f * (normalTemperature - temperature);
-    blue = 255;
+    for (int i = 0; i < gBrightness; ++i)
+    {
+      gCirclePixel.setPixelColor(i, curr.R, curr.G, curr.B);
+    }
+    gCirclePixel.show(); 
   }
-
-  TurnOnPixel(red, green, blue);
-}
-void EmitOP(int temperature)
-{
-  //ORANGE : (255, 50, 0)
-  //PURPLE : (150, 0, 220)
-  static const int normalTemperature = NORMAL_TEMPERATURE * 10;
-  
-  int red = 0;
-  int green = 0;
-  int blue = 0;
-  if (temperature >= normalTemperature)
-  {
-    red = 255;
-    green = 255 - 1.4f * (temperature - normalTemperature);
-    blue = 255 - 1.7f * (temperature - normalTemperature);
-  }
-  else
-  {
-    red = 255 - 0.7f * (normalTemperature - temperature);
-    green = 255 - 1.7f * (normalTemperature - temperature);
-    blue = 255 - 0.23f * (normalTemperature - temperature);
-  }
-
-  TurnOnPixel(red, green, blue);
-}
-
-void EmitYC(int temperature)
-{
-  //YELLOW : (255, 255, 0)
-  //CYAN : (0, 255, 255)
-  static const int normalTemperature = NORMAL_TEMPERATURE * 10;
-  
-  int red = 0;
-  int green = 0;
-  int blue = 0;
-  if (temperature >= normalTemperature)
-  {
-    red = 255;
-    green = 255;
-    blue = 255 - 1.7f * (temperature - normalTemperature);
-  }
-  else
-  {
-    red = 255 - 1.7f * (normalTemperature - temperature);
-    green = 255;
-    blue = 255;
-  }
-
-  TurnOnPixel(red, green, blue);
-}
-
-void TurnOnPixel(int red, int green, int blue)
-{ 
-  gCirclePixel.clear();
-  for (int i = 0; i < gBrightness; ++i)
-  {
-    gCirclePixel.setPixelColor(i, red, green, blue);
-  }
-  gCirclePixel.show();
 }
 
 void ChangeColor()
@@ -166,13 +149,9 @@ void ChangeColor()
 
 void ChangeBrightness()
 {
-  if (gBrightness == 16)
+  if ((gBrightness += 2) > 16)
   {
     gBrightness = 2;
   }
-  else
-  {
-    gBrightness += 2;
-  }
+  gbIsBrightnessChanged = true;
 }
-
