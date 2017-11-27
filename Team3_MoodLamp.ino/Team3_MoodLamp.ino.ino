@@ -4,16 +4,18 @@
   #include <avr/power.h>
 #endif
 
-#define _DEBUG
+//#define _DEBUG
 
 enum eColor { RED_TO_BLUE, ORANGE_TO_PURPLE, YELLOW_TO_CYAN };
 
-#define NEO_PIXEL 4
-#define COLOR_BUTTON 2
-#define BRIGHTNESS_BUTTON 3
-#define TEMP_SENSOR A5
-#define BATTERY A0
-
+#define TEMP_SENSOR           A5
+#define BATTERY               A0
+#define COLOR_BUTTON          2
+#define BRIGHTNESS_BUTTON     3
+#define NEO_PIXEL             4
+#define RGB_RED               5
+#define RGB_GREEN             6
+#define RGB_BLUE              7
 const int NORMAL_TEMPERATURE = 15 * 10;
 const int THERMISTER = 4275;
 const int R0 = 100000; // 100kelvin
@@ -49,6 +51,10 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(COLOR_BUTTON), ChangeColor, FALLING);
   attachInterrupt(digitalPinToInterrupt(BRIGHTNESS_BUTTON), ChangeBrightness, FALLING); 
 
+  pinMode(RGB_RED, OUTPUT);
+  pinMode(RGB_GREEN, OUTPUT);
+  pinMode(RGB_BLUE, OUTPUT);
+  
   Serial.begin(9600);
 }
 
@@ -61,6 +67,30 @@ void loop()
   float R = 1023.f / analogVal - 1.f;
   R *= R0;
   float temperature = 1.f / (log(R / R0) / THERMISTER + 1 / 298.15f) - 273.15f;
+
+  //To check battery level
+  int batteryVal = analogRead(BATTERY);
+  //0% ~ 30%
+  if (batteryVal < 310)
+  {
+    analogWrite(RGB_RED, 255);
+    analogWrite(RGB_GREEN, 0);
+    analogWrite(RGB_BLUE, 0);
+  }
+  //30% ~ 65%
+  else if (batteryVal < 325)
+  {
+    analogWrite(RGB_RED, 128);
+    analogWrite(RGB_GREEN, 128);
+    analogWrite(RGB_BLUE, 0);
+  }
+  //65% ~ 100%
+  else
+  {
+    analogWrite(RGB_RED, 0);
+    analogWrite(RGB_GREEN, 255);
+    analogWrite(RGB_BLUE, 0);
+  }
   
 #ifdef _DEBUG
   Serial.print("Temp : ");
