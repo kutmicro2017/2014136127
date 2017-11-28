@@ -4,7 +4,7 @@
   #include <avr/power.h>
 #endif
 
-//#define _DEBUG
+#define _DEBUG
 
 enum eColor { RED_TO_BLUE, ORANGE_TO_PURPLE, YELLOW_TO_CYAN };
 
@@ -106,49 +106,49 @@ void loop()
   case eColor::RED_TO_BLUE:
     //RED : (255, 0, 0)
     //BLUE : (0, 0, 255)
-    if (temperature >= NORMAL_TEMPERATURE)
+    if (temperature <= NORMAL_TEMPERATURE)
+    {
+      curr.R = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
+      curr.G = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
+      curr.B = 255;
+    }
+    else
     {
       curr.R = 255;
       curr.G = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
       curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
     }
-    else
-    {
-      curr.R = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
-      curr.G = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
-      curr.B = 255;
-    }
     break;
   case eColor::ORANGE_TO_PURPLE:
     //ORANGE : (255, 50, 0)
     //PURPLE : (150, 0, 220)
-    if (temperature >= NORMAL_TEMPERATURE)
-    {
-      curr.R = 255;
-      curr.G = 255 - 1.4f * (temperature - NORMAL_TEMPERATURE);
-      curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
-    }
-    else
+    if (temperature <= NORMAL_TEMPERATURE)
     {
       curr.R = 255 - 0.7f * (NORMAL_TEMPERATURE - temperature);
       curr.G = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
       curr.B = 255 - 0.23f * (NORMAL_TEMPERATURE - temperature);
     }
+    else
+    {
+      curr.R = 255;
+      curr.G = 255 - 1.4f * (temperature - NORMAL_TEMPERATURE);
+      curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
+    }
     break;
   default:
     //YELLOW : (255, 255, 0)
     //CYAN : (0, 255, 255)
-    if (temperature >= NORMAL_TEMPERATURE)
-    {
-      curr.R = 255;
-      curr.G = 255;
-      curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
-    }
-    else
+    if (temperature <= NORMAL_TEMPERATURE)
     {
       curr.R = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
       curr.G = 255;
       curr.B = 255;
+    }
+    else
+    {
+      curr.R = 255;
+      curr.G = 255;
+      curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
     }
     break;
   }
