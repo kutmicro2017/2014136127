@@ -4,8 +4,6 @@
   #include <avr/power.h>
 #endif
 
-#define _DEBUG
-
 enum eColor { RED_TO_BLUE, ORANGE_TO_PURPLE, YELLOW_TO_CYAN };
 
 #define TEMP_SENSOR           A5
@@ -92,13 +90,8 @@ void loop()
     analogWrite(RGB_BLUE, 0);
   }
   
-#ifdef _DEBUG
-  Serial.print("Temp : ");
-  Serial.println(temperature);
-#endif
-
   //To set RGB
-  RGB curr = { 0 };
+  static RGB curr = { 0 };
   static RGB prev = { 0 };
   prev = curr;
   switch (gColor)
