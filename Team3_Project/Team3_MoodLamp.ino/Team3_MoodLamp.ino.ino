@@ -1,8 +1,5 @@
 #include <Adafruit_NeoPixel.h>
 #include <math.h>
-#ifdef __AVR__
-  #include <avr/power.h>
-#endif
 
 enum eColor { RED_TO_BLUE, ORANGE_TO_PURPLE, YELLOW_TO_CYAN };
 
@@ -35,12 +32,6 @@ struct RGB
 
 void setup()
 {
-#ifdef __AVR_ATtiny85__
-  if (F_CPU) == 16000000)
-  {
-    clock_prescale_set(clock_div_1); 
-  }
-#endif
   gCirclePixel.begin();
   gCirclePixel.show();
 
@@ -66,28 +57,31 @@ void loop()
   R *= R0;
   float temperature = 1.f / (log(R / R0) / THERMISTER + 1 / 298.15f) - 273.15f;
 
+
   //To check battery level
   int batteryVal = analogRead(BATTERY);
+  float voltage = 2 * batteryVal * (5.f / 1023.f);
+  
   //0% ~ 30%
-  if (batteryVal < 310)
+  if (voltage < 4.32f)
   {
     analogWrite(RGB_RED, 255);
     analogWrite(RGB_GREEN, 0);
     analogWrite(RGB_BLUE, 0);
   }
   //30% ~ 65%
-  else if (batteryVal < 325)
+  else if (voltage < 4.34f)
   {
-    analogWrite(RGB_RED, 128);
-    analogWrite(RGB_GREEN, 128);
+    analogWrite(RGB_RED, 0);
+    analogWrite(RGB_GREEN, 255);
     analogWrite(RGB_BLUE, 0);
   }
   //65% ~ 100%
   else
   {
     analogWrite(RGB_RED, 0);
-    analogWrite(RGB_GREEN, 255);
-    analogWrite(RGB_BLUE, 0);
+    analogWrite(RGB_GREEN, 0);
+    analogWrite(RGB_BLUE, 255);
   }
   
   //To set RGB
