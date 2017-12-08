@@ -1,8 +1,5 @@
 #include <Adafruit_NeoPixel.h>
 #include <math.h>
-#ifdef __AVR__
-  #include <avr/power.h>
-#endif
 
 enum eColor { RED_TO_BLUE, ORANGE_TO_PURPLE, YELLOW_TO_CYAN };
 
@@ -35,12 +32,6 @@ struct RGB
 
 void setup()
 {
-#ifdef __AVR_ATtiny85__
-  if (F_CPU) == 16000000)
-  {
-    clock_prescale_set(clock_div_1); 
-  }
-#endif
   gCirclePixel.begin();
   gCirclePixel.show();
 
@@ -66,31 +57,35 @@ void loop()
   R *= R0;
   float temperature = 1.f / (log(R / R0) / THERMISTER + 1 / 298.15f) - 273.15f;
 
+
   //To check battery level
   int batteryVal = analogRead(BATTERY);
+  float voltage = 2 * batteryVal * (5.f / 1023.f);
+  
   //0% ~ 30%
-  if (batteryVal < 310)
+  if (voltage < 4.32f)
   {
     analogWrite(RGB_RED, 255);
     analogWrite(RGB_GREEN, 0);
     analogWrite(RGB_BLUE, 0);
   }
   //30% ~ 65%
-  else if (batteryVal < 325)
+  else if (voltage < 4.34f)
   {
-    analogWrite(RGB_RED, 128);
-    analogWrite(RGB_GREEN, 128);
+    analogWrite(RGB_RED, 0);
+    analogWrite(RGB_GREEN, 255);
     analogWrite(RGB_BLUE, 0);
   }
   //65% ~ 100%
   else
   {
     analogWrite(RGB_RED, 0);
-    analogWrite(RGB_GREEN, 255);
-    analogWrite(RGB_BLUE, 0);
+    analogWrite(RGB_GREEN, 0);
+    analogWrite(RGB_BLUE, 255);
   }
   
   //To set RGB
+  temperature *= 10.f;
   static RGB curr = { 0 };
   static RGB prev = { 0 };
   prev = curr;
@@ -99,41 +94,41 @@ void loop()
   case eColor::RED_TO_BLUE:
     //RED : (255, 0, 0)
     //BLUE : (0, 0, 255)
-    if (temperature <= NORMAL_TEMPERATURE)
+    if (temperature >= NORMAL_TEMPERATURE)
     {
-      curr.R = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
-      curr.G = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
+      curr.R = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
+      curr.G = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
       curr.B = 255;
     }
     else
     {
       curr.R = 255;
-      curr.G = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
-      curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
+      curr.G = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
+      curr.B = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
     }
     break;
   case eColor::ORANGE_TO_PURPLE:
     //ORANGE : (255, 50, 0)
     //PURPLE : (150, 0, 220)
-    if (temperature <= NORMAL_TEMPERATURE)
+    if (temperature >= NORMAL_TEMPERATURE)
     {
-      curr.R = 255 - 0.7f * (NORMAL_TEMPERATURE - temperature);
-      curr.G = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
-      curr.B = 255 - 0.23f * (NORMAL_TEMPERATURE - temperature);
+      curr.R = 255 - 0.7f * (temperature - NORMAL_TEMPERATURE);
+      curr.G = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
+      curr.B = 255 - 0.23f * (temperature - NORMAL_TEMPERATURE);
     }
     else
     {
       curr.R = 255;
-      curr.G = 255 - 1.4f * (temperature - NORMAL_TEMPERATURE);
-      curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
+      curr.G = 255 - 1.4f * (NORMAL_TEMPERATURE - temperature);
+      curr.B = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
     }
     break;
   default:
     //YELLOW : (255, 255, 0)
     //CYAN : (0, 255, 255)
-    if (temperature <= NORMAL_TEMPERATURE)
+    if (temperature >= NORMAL_TEMPERATURE)
     {
-      curr.R = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
+      curr.R = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
       curr.G = 255;
       curr.B = 255;
     }
@@ -141,7 +136,7 @@ void loop()
     {
       curr.R = 255;
       curr.G = 255;
-      curr.B = 255 - 1.7f * (temperature - NORMAL_TEMPERATURE);
+      curr.B = 255 - 1.7f * (NORMAL_TEMPERATURE - temperature);
     }
     break;
   }
